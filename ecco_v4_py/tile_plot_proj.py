@@ -107,8 +107,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     # loop through different parts of the map to plot (if they exist), 
     # do interpolation and plot
     f = plt.gcf()
-    #print(len(lon_tmp_d))
-    for key, lon_tmp in lon_tmp_d.items():
+    print(len(lon_tmp_d))
+    for key, lon_tmp in lon_tmp_d.iteritems():
 
         new_grid_lon, new_grid_lat, data_latlon_projection = \
             resample_to_latlon(lons, lats, data, 
