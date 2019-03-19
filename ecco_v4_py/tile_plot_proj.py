@@ -80,8 +80,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     f = plt.gcf()
     new_grid_lon, new_grid_lat, data_latlon_projection = \
         resample_to_latlon(lons, lats, data, 
-                           left_lon, right_lon, dy,
-                           bottom_lat, top_lat, dx, 
+                           bottom_lat, top_lat, dy, 
+                           left_lon, right_lon, dx,
                            mapping_method='nearest_neighbor')
         
     #%% 
