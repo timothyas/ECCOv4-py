@@ -61,94 +61,66 @@ def plot_proj_to_latlon_grid(lons, lats, data,
         else:
             print("unrecognized argument ", key)
 
+    #%% 
+    # set lat/lon bounds
+    left_lon    = -180
+    right_lon   =  180
+    top_lat     =  89.5 
+    bottom_lat  = -89.5 
 
 
     #%%
-    # To avoid plotting problems around the date line, lon=180E, -180W 
-    # plot the data field in two parts, A and B.  
-    # part 'A' spans from starting longitude to 180E 
-    # part 'B' spans the from 180E to 360E + starting longitude.  
-    # If the starting  longitudes or 0 or 180 it is a special case.
-    if user_lon_0 > -180 and user_lon_0 < 180:
-        A_left_limit = user_lon_0
-        A_right_limit = 180
-        B_left_limit =  -180
-        B_right_limit = user_lon_0
-        center_lon = A_left_limit + 180
-        
-    elif user_lon_0 == 180 or user_lon_0 == -180:
-        A_left_limit = -180
-        A_right_limit = 0
-        B_left_limit =  0
-        B_right_limit = 180
-        center_lon = 0
-    else:
-        raise ValueError('invalid starting longitude')
-
-    #%%
-    # the number of degrees spanned in part A and part B
-    num_deg_A =  int((A_right_limit - A_left_limit)/dx)
-    num_deg_B =  int((B_right_limit - B_left_limit)/dx)
-
-    # find the longitudal limits of part A and B
-    lon_tmp_d = dict()
-    if num_deg_A > 0:
-        lon_tmp_d['A'] = [A_left_limit, A_right_limit]
-            
-    if num_deg_B > 0:
-        lon_tmp_d['B'] = [B_left_limit, B_right_limit]
-
     # Make projection axis
     (ax,show_grid_labels) = _create_projection_axis(
             projection_type,user_lon_0,lat_lim)
     
 
     #%%
-    # loop through different parts of the map to plot (if they exist), 
-    # do interpolation and plot
+    # do interpolation
     f = plt.gcf()
-    print(len(lon_tmp_d))
-    for key, lon_tmp in lon_tmp_d.iteritems():
-
-        new_grid_lon, new_grid_lat, data_latlon_projection = \
-            resample_to_latlon(lons, lats, data, 
-                               -89.5, 89.5, dy,
-                               lon_tmp[0], lon_tmp[1], dx, 
-                               mapping_method='nearest_neighbor')
-            
-        if isinstance(ax.projection, ccrs.NorthPolarStereo) or \
-           isinstance(ax.projection, ccrs.SouthPolarStereo) :
-            p, gl, cbar = \
-                plot_pstereo(new_grid_lon,
-                             new_grid_lat, 
-                             data_latlon_projection,
-                             4326, lat_lim, 
-                             cmin, cmax, ax,
-                             plot_type = plot_type,
-                             show_colorbar=False, 
-                             circle_boundary=True,
-                             cmap=cmap, 
-                             show_grid_lines=False)
-
-        else: # not polar stereo
-            p, gl, cbar = \
-                plot_global(new_grid_lon,
-                            new_grid_lat, 
-                            data_latlon_projection,
-                            4326, 
-                            cmin, cmax, ax,
-                            plot_type = plot_type,                                       
-                            show_colorbar = False,
-                            cmap=cmap, 
-                            show_grid_lines = False,
-                            show_grid_labels = False)
-                    
-        if show_grid_lines :
-            ax.gridlines(crs=ccrs.PlateCarree(), 
-                                  linewidth=1, color='black', 
-                                  alpha=0.5, linestyle='--', 
-                                  draw_labels = show_grid_labels)
+    new_grid_lon, new_grid_lat, data_latlon_projection = \
+        resample_to_latlon(lons, lats, data, 
+                           left_lon, right_lon, dy,
+                           bottom_lat, top_lat, dx, 
+                           mapping_method='nearest_neighbor')
         
+    #%% 
+    # make the plot
+    if isinstance(ax.projection, ccrs.NorthPolarStereo) or \
+       isinstance(ax.projection, ccrs.SouthPolarStereo) :
+        p, gl, cbar = \
+            plot_pstereo(new_grid_lon,
+                         new_grid_lat, 
+                         data_latlon_projection,
+                         4326, lat_lim, 
+                         cmin, cmax, ax,
+                         plot_type = plot_type,
+                         show_colorbar=False, 
+                         circle_boundary=True,
+                         cmap=cmap, 
+                         show_grid_lines=False)
+
+    else: # not polar stereo
+        p, gl, cbar = \
+            plot_global(new_grid_lon,
+                        new_grid_lat, 
+                        data_latlon_projection,
+                        4326, 
+                        cmin, cmax, ax,
+                        plot_type = plot_type,                                       
+                        show_colorbar = False,
+                        cmap=cmap, 
+                        show_grid_lines = False,
+                        show_grid_labels = False)
+                
+    #%% 
+    # add plot features
+    if show_grid_lines :
+        ax.gridlines(crs=ccrs.PlateCarree(), 
+                              linewidth=1, color='black', 
+                              alpha=0.5, linestyle='--', 
+                              draw_labels = show_grid_labels)
+    
     if show_colorbar:
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(cmin,cmax))
         sm._A = []
@@ -181,15 +153,11 @@ def plot_pstereo(xx,yy, data,
                             
     if isinstance(ax.projection, ccrs.NorthPolarStereo):
         ax.set_extent([-180, 180, lat_lim, 90], ccrs.PlateCarree())
-        print('north')
     elif isinstance(ax.projection, ccrs.SouthPolarStereo):
         ax.set_extent([-180, 180, -90, lat_lim], ccrs.PlateCarree())
-        print('south')
     else:
         raise ValueError('ax must be either ccrs.NorthPolarStereo or ccrs.SouthPolarStereo')
 
-    print(lat_lim)
-    
     if circle_boundary:
         theta = np.linspace(0, 2*np.pi, 100)
         center, radius = [0.5, 0.5], 0.5
