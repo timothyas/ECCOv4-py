@@ -80,7 +80,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
 
     #%%
     # do interpolation
-    #f = plt.gcf()
+    f = plt.gcf()
     new_grid_lon, new_grid_lat, data_latlon_projection = \
         resample_to_latlon(lons, lats, data, 
                            bottom_lat, top_lat, dy, 
@@ -136,7 +136,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     ax= plt.gca()
 
     #%%
-    return ax, p, cbar
+    return f, ax, p, cbar
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     
