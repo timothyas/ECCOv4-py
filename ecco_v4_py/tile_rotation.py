@@ -35,8 +35,8 @@ def reorient_13_tile_GRID_Dataset_to_latlon_layout(gds, **kwargs):
     #            'C' or 'G' points.  These 'rotate' easily because these 
     #            variables have no 'direction' (XC after rotation is still XC)
     #            (except maybe the Angles but haven't sorted those out yet)
-    ds_CG = gds[['XC','YC', 'Depth','hFacC', 'RAC', 
-                 'AngleCS', 'AngleSN','XG','YG','RAZ', 'land_c']]
+    ds_CG = gds[['XC','YC', 'Depth','hFacC', 'rA', 
+                 'CS', 'SN','XG','YG','rAz','maskC']]
 
     # -- step 2: rotate the new subsetted Dataset 
 
@@ -54,8 +54,8 @@ def reorient_13_tile_GRID_Dataset_to_latlon_layout(gds, **kwargs):
     # correct order (e.g., after rotation DXC on tile 6 corresponds with DYC 
     # in tile 8, DYG on tile 6 corresponds with DXG on tile 8 after rotation)
     
-    ds_U = gds[['DXC','DYG','hFacW','land_u']]
-    ds_V = gds[['DYC','DXG','hFacS','land_v']]    
+    ds_U = gds[['dxC','dyG','hFacW','maskW']]
+    ds_V = gds[['dyC','dxG','hFacS','maskS']]    
     
     ds_U_r, ds_V_r = \
         reorient_13_tile_Dataset_to_latlon_layout_UV_points(ds_U, ds_V, **kwargs)
@@ -105,7 +105,7 @@ def reorient_13_tile_Dataset_to_latlon_layout_CG_points(ds, **kwargs):
     
     # By default, the Arctic cap will remain aligned with tile 6 in 
     # the 'y' direction
-    aca = 6
+    aca = 5
     
     #%%
     # To make the Arctic cap align with a different tile in the 'y' direction
@@ -120,7 +120,7 @@ def reorient_13_tile_Dataset_to_latlon_layout_CG_points(ds, **kwargs):
     num_tiles = 0
     
     # loop through all 13 tiles
-    for cur_tile in range(1,14):
+    for cur_tile in range(0,13):
 
         # Proceed if cur_tile is in the Dataset
         if cur_tile in ds.tile.values:
@@ -128,7 +128,7 @@ def reorient_13_tile_Dataset_to_latlon_layout_CG_points(ds, **kwargs):
             num_tiles = num_tiles + 1
 
             # extract the Dataset corresponding with this tile
-            cur_ds = ds.sel(tile=cur_tile)
+            cur_ds = ds.isel(tile=cur_tile)
         
             # For tiles 1-6 we do nothing, they are already in a quasi lat-lon 
             # orientation
@@ -138,21 +138,21 @@ def reorient_13_tile_Dataset_to_latlon_layout_CG_points(ds, **kwargs):
             # If the Arctic is be aligned with a different tile it must be rotated
             # by 90 degrees clockwise more than one time.
             if cur_tile == 7:
-                if aca == 3:
+                if aca == 2:
                     cur_ds = rotate_single_tile_Dataset_CG_points(cur_ds, 
                                                                   rot_k =3)
-                elif aca == 6:
+                elif aca == 5:
                     print('keeping Arctic cap alignment with tile 6')
-                elif aca == 8:                
+                elif aca == 7:                
                     cur_ds = rotate_single_tile_Dataset_CG_points(cur_ds)                
-                elif aca == 11:
+                elif aca == 10:
                     cur_ds = rotate_single_tile_Dataset_CG_points(cur_ds, 
                                                                   rot_k=2)
                 else:
                     print('invalid Arctic cap alignment, leaving unchanged')
     
             # Tiles 8-13 are rotated once clockwise
-            elif cur_tile > 7:
+            elif cur_tile > 6:
                 cur_ds = rotate_single_tile_Dataset_CG_points(cur_ds)                
     
             # Append the new, possibly rotated Dataset, to the new Dataset array
