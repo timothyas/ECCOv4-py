@@ -18,7 +18,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                              projection_type = 'robin', 
                              plot_type = 'pcolormesh', 
                              user_lon_0 = -66,
-                             lat_lim = 50, 
+                             lat_lim = [-89.5,89.5], 
+                             lon_lim = [-180,180],
                              levels = 20, 
                              cmap='jet', 
                              dx=.25, 
@@ -59,18 +60,18 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     # part 'A' spans from starting longitude to 180E 
     # part 'B' spans the from 180E to 360E + starting longitude.  
     # If the starting  longitudes or 0 or 180 it is a special case.
-    if user_lon_0 > -180 and user_lon_0 < 180:
+    if user_lon_0 > lon_lim[0] and user_lon_0 < lon_lim[1]:
         A_left_limit = user_lon_0
-        A_right_limit = 180
-        B_left_limit =  -180
+        A_right_limit = lon_lim[1]
+        B_left_limit =  lon_lim[0]
         B_right_limit = user_lon_0
-        center_lon = A_left_limit + 180
+        center_lon = A_left_limit 
         
-    elif user_lon_0 == 180 or user_lon_0 == -180:
-        A_left_limit = -180
+    elif user_lon_0 == -180 or user_lon_0 == 180:
+        A_left_limit = lon_lim[0]
         A_right_limit = 0
         B_left_limit =  0
-        B_right_limit = 180
+        B_right_limit = lon_lim[1]
         center_lon = 0
     else:
         raise ValueError('invalid starting longitude')
@@ -141,17 +142,20 @@ def plot_proj_to_latlon_grid(lons, lats, data,
 
         new_grid_lon, new_grid_lat, data_latlon_projection = \
             resample_to_latlon(lons, lats, data, 
-                               -89.5, 89.5, dy,
+                               lat_lim[0], lat_lim[1], dy,
                                lon_tmp[0], lon_tmp[1], dx, 
                                mapping_method='nearest_neighbor')
             
+        print(lon_tmp)
+        print(lat_lim)
+        ax.set_extent([lon_tmp[0], lon_tmp[1], lat_lim[0], lat_lim[1]], ccrs.PlateCarree())
         if isinstance(ax.projection, ccrs.NorthPolarStereo) or \
            isinstance(ax.projection, ccrs.SouthPolarStereo) :
             p, gl, cbar = \
                 plot_pstereo(new_grid_lon,
                              new_grid_lat, 
                              data_latlon_projection,
-                             4326, lat_lim, 
+                             4326, lon_lim, lat_lim, 
                              cmin, cmax, ax,
                              plot_type = plot_type,
                              show_colorbar=False, 
@@ -198,6 +202,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
 
 def plot_pstereo(xx,yy, data, 
                  data_projection_code, \
+                 lon_lim,
                  lat_lim, 
                  cmin, cmax, ax, 
                  plot_type = 'pcolormesh', 
@@ -207,15 +212,16 @@ def plot_pstereo(xx,yy, data,
                  show_grid_lines=False,
                  levels = 20):
 
+        #ax.set_extent([lon_lim[0], lon_lim[1], lat_lim[0], lat_lim[1]], ccrs.PlateCarree())
                             
-    if isinstance(ax.projection, ccrs.NorthPolarStereo):
-        ax.set_extent([-180, 180, lat_lim, 90], ccrs.PlateCarree())
-        print('north')
-    elif isinstance(ax.projection, ccrs.SouthPolarStereo):
-        ax.set_extent([-180, 180, -90, lat_lim], ccrs.PlateCarree())
-        print('south')
-    else:
-        raise ValueError('ax must be either ccrs.NorthPolarStereo or ccrs.SouthPolarStereo')
+    #if isinstance(ax.projection, ccrs.NorthPolarStereo):
+    #    ax.set_extent([lon_lim[0], lon_lim[1], lat_lim[0], lat_lim[1]], ccrs.PlateCarree())
+    #    print('north')
+    #elif isinstance(ax.projection, ccrs.SouthPolarStereo):
+    #    ax.set_extent([-180, 180, , lat_lim[1]], ccrs.PlateCarree())
+    #    print('south')
+    #else:
+    #    raise ValueError('ax must be either ccrs.NorthPolarStereo or ccrs.SouthPolarStereo')
 
     print(lat_lim)
     
