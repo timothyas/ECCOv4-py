@@ -225,11 +225,17 @@ def meridional_trsp_at_depth(xfld, yfld, lat_vals, cds,
         lat_maskW, lat_maskS = vector_calc.get_latitude_masks(lat, cds['YC'], grid)
 
         # Sum horizontally
-        lat_trsp_x = xfld.where((lat_maskW==1) &
-                                (basin_maskW==1),
+        # Faster to do summation with .where, but need to take sign
+        # of mask into account
+        maskW = basin_maskW*lat_maskW
+        maskS = basin_maskS*lat_maskS
+        lat_trsp_x =  xfld.where( maskW ==  1,
                                 drop=True).sum(dim=['i_g','j','tile'])
-        lat_trsp_y = yfld.where((lat_maskS==1) &
-                                (basin_maskS==1),
+        lat_trsp_x -= xfld.where( maskW == -1,
+                                drop=True).sum(dim=['i_g','j','tile'])
+        lat_trsp_y =  yfld.where( maskS ==  1,
+                                drop=True).sum(dim=['i','j_g','tile'])
+        lat_trsp_y -= yfld.where( maskS == -1,
                                 drop=True).sum(dim=['i','j_g','tile'])
 
         ds_out['trsp_z'].loc[{'lat':lat}] = lat_trsp_x + lat_trsp_y

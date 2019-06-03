@@ -273,8 +273,10 @@ def section_trsp_at_depth(xfld, yfld, maskW, maskS, cds,
     ds_out = _initialize_section_trsp_data_array(cds)
 
     # Apply section mask and sum horizontally
-    sec_trsp_x = xfld.where(maskW==1,drop=True).sum(dim=['i_g','j','tile'])
-    sec_trsp_y = yfld.where(maskS==1,drop=True).sum(dim=['i','j_g','tile'])
+    sec_trsp_x =  xfld.where(maskW ==  1,drop=True).sum(dim=['i_g','j','tile'])
+    sec_trsp_x -= xfld.where(maskW == -1,drop=True).sum(dim=['i_g','j','tile'])
+    sec_trsp_y =  yfld.where(maskS ==  1,drop=True).sum(dim=['i','j_g','tile'])
+    sec_trsp_y -= yfld.where(maskS == -1,drop=True).sum(dim=['i','j_g','tile'])
 
     ds_out['trsp_z'] = sec_trsp_x + sec_trsp_y
 
