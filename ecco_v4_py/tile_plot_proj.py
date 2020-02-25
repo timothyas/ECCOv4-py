@@ -21,6 +21,7 @@ from .resample_to_latlon import resample_to_latlon
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 def plot_proj_to_latlon_grid(lons, lats, data, 
+                             data_mate=None,
                              projection_type = 'robin', 
                              plot_type = 'pcolormesh', 
                              user_lon_0 = 0,
@@ -34,8 +35,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                              show_colorbar = False, 
                              show_grid_lines = True,
                              show_grid_labels = True,
-		 	                         grid_linewidth = 1, 
-     	   	 	                 grid_linestyle = '--', 
+                             grid_linewidth = 1,
+                             grid_linestyle = '--', 
                              subplot_grid=None,
                              less_output=True,
                              custom_background = False,
@@ -48,9 +49,13 @@ def plot_proj_to_latlon_grid(lons, lats, data,
 
     Parameters
     ----------
-    lons, lats, data : xarray DataArray    : 
+    lons, lats, data : xarray DataArray
         give the longitude, latitude values of the grid, and the 2D field to 
         be plotted
+    data_mate : xarray DataArray, optional
+        only relevant for 'quiver' plot_type. in this case, the x and y vector
+        components are (data, data_mate)
+        e.g. to show quiver plot of velocities (u,v), data=u, data_mate=v.
     projection_type : string, optional
         denote the type of projection, see Cartopy docs.
         options include
@@ -65,6 +70,9 @@ def plot_proj_to_latlon_grid(lons, lats, data,
             'stereo' - polar stereographic projection, see lat_lim for choosing
             'InterruptedGoodeHomolosine'
                 North or South
+    plot_type : string, optional
+        pcolormesh, contourf, or quiver
+        if quiver, data_mate must be provided
     user_lon_0 : float, optional, default 0 degrees
         denote central longitude
     user_lat_0 : float, optional, 
@@ -125,13 +133,19 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     else:
         cmap = 'viridis' if cmap is None else cmap
 
+    skip=None
     for key in kwargs:
         if key == "cmin":
             cmin = kwargs[key]
         elif key == "cmax":
             cmax =  kwargs[key]
+        elif key == 'skip':
+            skip = kwargs[key]
         else:
             print("unrecognized argument ", key)
+    
+    if plot_type == 'quiver' and data_mate is None:
+        raise ValueError('Cannot make quiver plot without data_mate array')
 
     #%%
     # To avoid plotting problems around the date line, lon=180E, -180W 
@@ -195,6 +209,23 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                                lon_tmp[0], lon_tmp[1], dx, 
                                mapping_method='nearest_neighbor',
                                radius_of_influence = radius_of_influence)
+
+        ## Quiver plot stuff
+        if data_mate is not None:
+            _, _, data_mate_latlon_projection = \
+                resample_to_latlon(lons, lats, data_mate, 
+                                   -90+dy, 90-dy, dy,
+                                   lon_tmp[0], lon_tmp[1], dx, 
+                                   mapping_method='nearest_neighbor',
+                                   radius_of_influence = radius_of_influence)
+        else:
+            data_mate_latlon_projection=None
+
+        if skip is not None:
+            new_grid_lon = new_grid_lon[slice(None,None,skip),slice(None,None,skip)]
+            new_grid_lat = new_grid_lat[slice(None,None,skip),slice(None,None,skip)]
+            data_latlon_projection = data_latlon_projection[slice(None,None,skip),slice(None,None,skip)]
+            data_mate_latlon_projection = data_mate_latlon_projection[slice(None,None,skip),slice(None,None,skip)]
             
         if isinstance(ax.projection, ccrs.NorthPolarStereo) or \
            isinstance(ax.projection, ccrs.SouthPolarStereo) :
@@ -202,6 +233,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                 plot_pstereo(new_grid_lon,
                              new_grid_lat, 
                              data_latlon_projection,
+                             data_mate_latlon_projection,
                              4326, lat_lim, 
                              cmin, cmax, ax,
                              plot_type = plot_type,
@@ -219,25 +251,27 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                 plot_global(new_grid_lon,
                             new_grid_lat, 
                             data_latlon_projection,
+                            data_mate_latlon_projection,
                             4326, 
                             cmin, cmax, ax,
                             plot_type = plot_type,                                       
                             show_colorbar = False,
-                            cmap=cmap, 
-         			        show_grid_lines = False,
+                            cmap=cmap,
+                            show_grid_lines = False,
+                            show_grid_labels = show_grid_labels,
                             custom_background = custom_background,
                             background_name = background_name,
                             background_resolution = background_resolution,
-                            show_grid_labels = show_grid_labels)
+                            levels=levels)
 			    
                     
         if show_grid_lines :
             ax.gridlines(crs=ccrs.PlateCarree(), 
-                                  linewidth=grid_linewidth,
-                            				  color='black', 	
-                                  alpha=0.5, 
-                            				  linestyle=grid_linestyle, 
-                                  draw_labels = show_grid_labels,zorder=102)
+                         linewidth=grid_linewidth,
+                         color='black', 	
+                         alpha=0.5, 
+                         linestyle=grid_linestyle, 
+                         draw_labels = show_grid_labels,zorder=102)
         
        
         ax.add_feature(cfeature.LAND, zorder=100)
@@ -259,15 +293,15 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     
     
 
-def plot_pstereo(xx,yy, data, 
+def plot_pstereo(xx,yy, data, data_mate,
                  data_projection_code, \
                  lat_lim, 
                  cmin, cmax, ax, 
                  plot_type = 'pcolormesh', 
                  show_colorbar=False, 
                  circle_boundary = False, 
-		         grid_linewidth = 1, 
-		         grid_linestyle = '--', 
+		 grid_linewidth = 1, 
+		 grid_linestyle = '--', 
                  cmap=None, 
                  show_grid_lines=False,
                  custom_background = False,
@@ -330,8 +364,10 @@ def plot_pstereo(xx,yy, data,
         p = ax.contourf(xx, yy, data, levels, transform=data_crs,  \
                  vmin=cmin, vmax=cmax, cmap=cmap)
 
+    elif plot_type =='quiver':
+        p = ax.quiver(xx, yy, data, data_mate, transform=data_crs)
     else:
-        raise ValueError('plot_type  must be either "pcolormesh" or "contourf"')
+        raise ValueError('plot_type  must be either "pcolormesh", "contourf", or "quiver"')
 
     if not custom_background:     
         ax.add_feature(cfeature.LAND, zorder=100)
@@ -348,7 +384,7 @@ def plot_pstereo(xx,yy, data,
 
 #%%    
 
-def plot_global(xx,yy, data, 
+def plot_global(xx,yy, data, data_mate,
                 data_projection_code,
                 cmin, cmax, ax, 
                 plot_type = 'pcolormesh', 
@@ -356,7 +392,7 @@ def plot_global(xx,yy, data,
                 cmap=None, 
                 show_grid_lines = True,
                 show_grid_labels = True,
-      		        grid_linewidth = 1, 
+      		grid_linewidth = 1, 
                 custom_background = False,
                 background_name = [],
                 background_resolution = [],
@@ -391,8 +427,10 @@ def plot_global(xx,yy, data,
     elif plot_type =='contourf':
         p = ax.contourf(xx, yy, data, levels, transform=data_crs,
                         vmin=cmin, vmax=cmax, cmap=cmap)
+    elif plot_type =='quiver':
+        p = ax.quiver(xx, yy, data, data_mate, transform=data_crs)
     else:
-        raise ValueError('plot_type  must be either "pcolormesh" or "contourf"') 
+        raise ValueError('plot_type  must be either "pcolormesh", "contourf", or "quiver"') 
                          
     
     if not custom_background:     
