@@ -120,11 +120,15 @@ def plot_proj_to_latlon_grid(lons, lats, data,
     radius_of_influence : float, optional.  Default 100000 m
         the radius of the circle within which the input data is search for
         when mapping to the new grid
+    lon_bds, lat_bds : tuple or list, optional
+        defining a subset of a global plot, to focus in on a basin
     """
 
     cmap, (cmin,cmax) = assign_colormap(data,cmap)
 
     skip=None
+    lon_bds=[-180-dx,180+dx]
+    lat_bds=[-90+dy,90-dy]
     for key in kwargs:
         if key == "cmin":
             cmin = kwargs[key]
@@ -132,6 +136,10 @@ def plot_proj_to_latlon_grid(lons, lats, data,
             cmax =  kwargs[key]
         elif key == 'skip':
             skip = kwargs[key]
+        elif key =='lon_bds':
+            lon_bds = kwargs[key]
+        elif key =='lat_bds':
+            lat_bds = kwargs[key]
         else:
             print("unrecognized argument ", key)
     
@@ -253,7 +261,9 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                             custom_background = custom_background,
                             background_name = background_name,
                             background_resolution = background_resolution,
-                            levels=levels)
+                            levels=levels,
+                            lon_bds=lon_bds,
+                            lat_bds=lat_bds)
 			    
                     
         if show_grid_lines :
@@ -291,8 +301,8 @@ def plot_pstereo(xx,yy, data, data_mate,
                  plot_type = 'pcolormesh', 
                  show_colorbar=False, 
                  circle_boundary = False, 
-		 grid_linewidth = 1, 
-		 grid_linestyle = '--', 
+		         grid_linewidth = 1, 
+		         grid_linestyle = '--', 
                  cmap=None, 
                  show_grid_lines=False,
                  custom_background = False,
@@ -383,11 +393,13 @@ def plot_global(xx,yy, data, data_mate,
                 cmap=None, 
                 show_grid_lines = True,
                 show_grid_labels = True,
-      		grid_linewidth = 1, 
+      		    grid_linewidth = 1, 
                 custom_background = False,
                 background_name = [],
                 background_resolution = [],
-                levels=20):
+                levels=20,
+                lon_bds=[-180,180],
+                lat_bds=[-90,90]):
 
     # assign cmap default
     if cmap is None:
@@ -411,6 +423,8 @@ def plot_global(xx,yy, data, data_mate,
      
     if custom_background:
         ax.background_img(name=background_name, resolution=background_resolution)
+
+    ax.set_extent(lon_bds+lat_bds,ccrs.PlateCarree())
   
     if plot_type == 'pcolormesh':
         p = ax.pcolormesh(xx, yy, data, transform=data_crs, 
