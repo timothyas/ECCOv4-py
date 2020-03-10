@@ -17,7 +17,8 @@ from .read_bin_llc import read_llc_to_tiles
 # Store the package directory for loading the basins binary
 package_directory = os.path.dirname(os.path.abspath(__file__))
 
-def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
+def get_basin_mask(basin_name, mask, 
+                   basin_path='../binary_data',less_output=True):
     """Return mask for ocean basin.
     Note: This mirrors gcmfaces/ecco_v4/v4_basin.m
 
@@ -44,6 +45,9 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
         or 
             https://figshare.com/articles/Binary_files_for_the_ecco-v4-py_Python_package_/9932162
 
+    less_output : str, optional
+        debugging output flag
+
     Returns
     -------
     basin_mask : xarray DataArray
@@ -65,7 +69,7 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
     bin_dir = os.path.join(package_directory, basin_path)
    
     if os.path.exists(bin_dir + '/basins.data'):
-        all_basins = read_llc_to_tiles(bin_dir,'basins.data')
+        all_basins = read_llc_to_tiles(bin_dir,'basins.data',less_output=less_output)
     else:
         print ('Cannot find basins.data in ' + bin_dir + '\n')
         print ('You can download basins.data and basins.meta here:')

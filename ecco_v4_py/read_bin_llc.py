@@ -356,7 +356,7 @@ def load_ecco_vars_from_mds(mds_var_dir,
 
 #%%
 def read_llc_to_compact(fdir, fname, llc=90, skip=0, nk=1, nl=1, 
-            filetype = '>f4', less_output = False ):
+            filetype = '>f4', less_output = True ):
     """
 
     Loads an MITgcm binary file in the compact format of the
@@ -424,7 +424,7 @@ def read_llc_to_compact(fdir, fname, llc=90, skip=0, nk=1, nl=1,
 
 #%%
 def read_llc_to_tiles(fdir, fname, llc=90, skip=0, nk=1, nl=1, 
-              	      filetype = '>f', less_output = False, 
+              	      filetype = '>f', less_output = True, 
                       use_xmitgcm=False):
     """
 
@@ -549,7 +549,7 @@ def read_llc_to_tiles(fdir, fname, llc=90, skip=0, nk=1, nl=1,
 
 #%%
 def read_llc_to_faces(fdir, fname, llc=90, skip=0, nk=1, nl=1,
-        filetype = '>f4', less_output = False):
+        filetype = '>f4', less_output = True):
     """
 
     Loads an MITgcm binary file in the 'compact' format of the 
